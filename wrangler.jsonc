@@ -1,0 +1,6 @@
+{
+  "$schema": "https://developers.cloudflare.com/workers/wrangler/config-schema.json",
+  "name": "focus-timer-app",
+  "compatibility_date": "2026-07-26",
+  "assets": { "directory": "./public", "not_found_handling": "single-page-application" }
+}
