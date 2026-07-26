@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#10131a" />
+  <title>Focus Timer</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; color: #f7f7fb; background: radial-gradient(circle at 50% -10%, #30384c 0, #10131a 48%, #090b0f 100%); display: grid; place-items: center; padding: 24px; }
+    .shell { width: min(100%, 520px); }
+    .eyebrow { color: #a5b4fc; font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; margin: 0 0 12px; }
+    h1 { font-size: clamp(34px, 9vw, 54px); letter-spacing: -.06em; line-height: 1; margin: 0 0 28px; }
+    .card { border: 1px solid #ffffff14; border-radius: 28px; padding: clamp(24px, 7vw, 42px); background: #171b24cc; box-shadow: 0 24px 90px #0008, inset 0 1px #ffffff0d; backdrop-filter: blur(18px); }
+    .ring { --progress: 0deg; width: min(66vw, 290px); aspect-ratio: 1; margin: 0 auto 32px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(#a5b4fc var(--progress), #303746 var(--progress)); position: relative; }
+    .ring::after { content: ""; position: absolute; inset: 10px; border-radius: 50%; background: #171b24; box-shadow: inset 0 0 22px #0008; }
+    .time { position: relative; z-index: 1; font-variant-numeric: tabular-nums; font-size: clamp(46px, 13vw, 72px); font-weight: 650; letter-spacing: -.07em; }
+    .status { text-align: center; color: #aeb5c4; min-height: 22px; margin: 0 0 24px; }
+    .controls { display: grid; gap: 12px; }
+    .primary { border: 0; border-radius: 15px; padding: 15px 20px; background: #a5b4fc; color: #111522; font-size: 16px; font-weight: 800; cursor: pointer; transition: transform .16s, filter .16s; }
+    .primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .secondary { border: 1px solid #ffffff1c; border-radius: 15px; padding: 14px 20px; background: #ffffff08; color: #e7e9f0; font-size: 15px; font-weight: 650; cursor: pointer; }
+    .secondary:hover { background: #ffffff12; }
+    .presets { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }
+    .preset { border: 1px solid #ffffff18; border-radius: 999px; padding: 8px 13px; background: transparent; color: #b9c0ce; cursor: pointer; }
+    .preset:hover, .preset.active { border-color: #a5b4fc88; color: #dce1ff; background: #a5b4fc12; }
+    .hint { text-align: center; color: #70798b; font-size: 12px; margin: 20px 0 0; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <p class="eyebrow">Focus timer</p>
+    <h1>集中の時間を、<br>静かに始める。</h1>
+    <section class="card" aria-label="タイマー">
+      <div class="ring" id="ring"><div class="time" id="time">25:00</div></div>
+      <p class="status" id="status">準備完了。まずは小さく始めよう。</p>
+      <div class="controls">
+        <button class="primary" id="toggle">スタート</button>
+        <button class="secondary" id="reset">リセット</button>
+      </div>
+      <div class="presets" aria-label="プリセット">
+        <button class="preset active" data-minutes="25">25分</button>
+        <button class="preset" data-minutes="15">15分</button>
+        <button class="preset" data-minutes="5">5分</button>
+      </div>
+      <p class="hint">スペースキーで開始・一時停止</p>
+    </section>
+  </main>
+  <script>
+    const timeEl = document.querySelector('#time');
+    const statusEl = document.querySelector('#status');
+    const toggleEl = document.querySelector('#toggle');
+    const ringEl = document.querySelector('#ring');
+    const presetEls = [...document.querySelectorAll('.preset')];
+    let total = 25 * 60;
+    let remaining = total;
+    let running = false;
+    let interval = null;
+
+    function render() {
+      const minutes = Math.floor(remaining / 60).toString().padStart(2, '0');
+      const seconds = (remaining % 60).toString().padStart(2, '0');
+      timeEl.textContent = `${minutes}:${seconds}`;
+      ringEl.style.setProperty('--progress', `${(1 - remaining / total) * 360}deg`);
+      toggleEl.textContent = running ? '一時停止' : (remaining === 0 ? 'もう一度スタート' : 'スタート');
+      statusEl.textContent = remaining === 0 ? 'おつかれさま。ひと息つこう。' : running ? '集中中…' : '準備完了。まずは小さく始めよう。';
+      document.title = `${minutes}:${seconds} · Focus Timer`;
+    }
+    function toggle() {
+      if (remaining === 0) remaining = total;
+      running = !running;
+      clearInterval(interval);
+      if (running) interval = setInterval(() => { if (remaining > 0) remaining -= 1; else { running = false; clearInterval(interval); } render(); }, 1000);
+      render();
+    }
+    function reset() { running = false; clearInterval(interval); remaining = total; render(); }
+    toggleEl.addEventListener('click', toggle);
+    document.querySelector('#reset').addEventListener('click', reset);
+    presetEls.forEach((button) => button.addEventListener('click', () => { total = Number(button.dataset.minutes) * 60; remaining = total; running = false; clearInterval(interval); presetEls.forEach((item) => item.classList.toggle('active', item === button)); render(); }));
+    document.addEventListener('keydown', (event) => { if (event.code === 'Space' && event.target.tagName !== 'BUTTON') { event.preventDefault(); toggle(); } });
+    render();
+  </script>
+</body>
+</html>
